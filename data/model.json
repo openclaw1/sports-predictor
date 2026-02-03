@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "isTrained": true,
+  "weights": {
+    "homeWinPct": 0.08275712578709886,
+    "awayWinPct": 0.05541306584121274,
+    "homeRecentForm": 0.005440394018195261,
+    "awayRecentForm": 0.09041758064681446,
+    "homeAdvantage": 0.005274974139330502,
+    "h2hAdvantage": 0.06569661213280467,
+    "restAdvantage": 0.029660474427865614,
+    "streakAdvantage": 0.007954859343156262,
+    "home_win_pct": null,
+    "away_win_pct": null,
+    "home_recent_form": null,
+    "away_recent_form": null,
+    "home_advantage": null,
+    "h2h_advantage": null,
+    "rest_advantage": null,
+    "streak_advantage": null
+  },
+  "bias": null,
+  "featureNames": [
+    "home_win_pct",
+    "away_win_pct",
+    "home_recent_form",
+    "away_recent_form",
+    "home_advantage",
+    "h2h_advantage",
+    "rest_advantage",
+    "streak_advantage"
+  ],
+  "savedAt": "2026-02-03T01:21:24.839Z"
+}
