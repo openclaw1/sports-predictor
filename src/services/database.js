@@ -21,7 +21,7 @@ function initDatabase() {
   
   // Create tables
   db.exec(`
-    -- Games data
+    -- Games data (upcoming)
     CREATE TABLE IF NOT EXISTS games (
       id TEXT PRIMARY KEY,
       sport TEXT NOT NULL,
@@ -34,12 +34,30 @@ function initDatabase() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Historical games (for training)
+    CREATE TABLE IF NOT EXISTS historical_games (
+      id TEXT PRIMARY KEY,
+      sport TEXT NOT NULL,
+      home_team TEXT NOT NULL,
+      away_team TEXT NOT NULL,
+      start_time TEXT NOT NULL,
+      home_score INTEGER,
+      away_score INTEGER,
+      home_odds REAL,
+      away_odds REAL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(id)
+    );
+
     -- Predictions
     CREATE TABLE IF NOT EXISTS predictions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       game_id TEXT NOT NULL,
       predicted_winner TEXT NOT NULL,
       confidence REAL NOT NULL,
+      home_prob REAL,
+      away_prob REAL,
+      expected_value REAL,
       model_version TEXT DEFAULT '1.0',
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (game_id) REFERENCES games(id)
@@ -49,6 +67,7 @@ function initDatabase() {
     CREATE TABLE IF NOT EXISTS paper_bets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       prediction_id INTEGER NOT NULL,
+      game_id TEXT NOT NULL,
       stake REAL NOT NULL,
       odds REAL NOT NULL,
       selection TEXT NOT NULL,
@@ -56,7 +75,8 @@ function initDatabase() {
       profit REAL DEFAULT 0,
       placed_at TEXT DEFAULT CURRENT_TIMESTAMP,
       settled_at TEXT,
-      FOREIGN KEY (prediction_id) REFERENCES predictions(id)
+      FOREIGN KEY (prediction_id) REFERENCES predictions(id),
+      FOREIGN KEY (game_id) REFERENCES games(id)
     );
 
     -- Team stats (computed features)
@@ -64,7 +84,7 @@ function initDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       team_name TEXT NOT NULL,
       sport TEXT NOT NULL,
-      season TEXT NOT NULL,
+      season TEXT DEFAULT 'current',
       games_played INTEGER DEFAULT 0,
       wins INTEGER DEFAULT 0,
       losses INTEGER DEFAULT 0,
@@ -74,6 +94,16 @@ function initDatabase() {
       away_wins INTEGER DEFAULT 0,
       last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(team_name, sport, season)
+    );
+
+    -- Model versions tracking
+    CREATE TABLE IF NOT EXISTS model_versions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      sport TEXT NOT NULL,
+      version TEXT NOT NULL,
+      accuracy REAL,
+      sample_size INTEGER,
+      trained_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Betting history for analytics

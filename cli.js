@@ -1,22 +1,9 @@
-#!/usr/bin/env node
-
-/**
- * Sports Predictor - Main Entry Point
- * 
- * Usage:
- *   node cli.js fetch        - Fetch today's games
- *   node cli.js predict      - Generate predictions
- *   node cli.js bet          - Place paper bets
- *   node cli.js stats        - Show betting stats
- *   node cli.js run          - Run full daily cycle
- *   node cli.js dashboard    - Start web dashboard
- */
-
-const { initDatabase } = require('./src/services/database');
-const predictionEngine = require('./src/models/predictionEngine');
-const paperBetting = require('./src/services/paperBetting');
-const cron = require('node-cron');
-const path = require('path');
+const { getDb, initDatabase } = require('./src/services/database');
+const sportsApi = require('./src/services/sportsApi');
+const predictionModel = require('./src/models/predictionModel');
+const featureEngine = require('./src/services/featureEngine');
+const bettingService = require('./src/services/bettingService');
+const backtestService = require('./src/services/backtestService');
 
 // Initialize
 initDatabase();
@@ -24,43 +11,79 @@ initDatabase();
 const command = process.argv[2] || 'help';
 
 async function runCommand() {
+  console.log(`\n🎯 Sports Predictor v1.0\n`);
+
   switch (command) {
     case 'fetch':
-      console.log('📊 Fetching today\'s games...');
-      const results = await predictionEngine.fetchAndStoreGames();
-      console.log('Results:', results);
+      console.log('📊 Fetching games from API...');
+      const results = {};
+      for (const sport of ['basketball_nba', 'soccer_epl', 'soccer_esp_la_liga']) {
+        const games = await sportsApi.getGamesWithOdds(sport);
+        results[sport] = games.length;
+        console.log(`   ${sport}: ${games.length} games`);
+      }
+      console.log('\n✅ Fetch complete');
       break;
 
     case 'predict':
       console.log('🎯 Generating predictions...');
-      const predictions = await predictionEngine.generatePredictionsForToday();
-      console.log(`Generated ${predictions.length} predictions`);
-      predictions.forEach(({ game, prediction }) => {
-        console.log(`  ${game.home_team} vs ${game.away_team}`);
-        console.log(`    → Winner: ${prediction.predicted_winner} (${(prediction.confidence * 100).toFixed(1)}%)`);
-      });
+      const predictions = [];
+      for (const sport of ['basketball_nba', 'soccer_epl', 'soccer_esp_la_liga']) {
+        const games = await sportsApi.getGamesWithOdds(sport);
+        for (const game of games.slice(0, 3)) { // Limit to 3 per sport
+          const pred = await predictionModel.predict(game, sport);
+          predictions.push({ sport, game, pred });
+        }
+      }
+
+      console.log('\n📋 Predictions:');
+      for (const { sport, game, pred } of predictions) {
+        console.log(`\n   ${game.home_team} vs ${game.away_team} (${sport})`);
+        console.log(`   → ${pred.predictedWinner} (${(pred.confidence * 100).toFixed(1)}% confidence)`);
+        console.log(`   EV: ${(pred.expectedValue * 100).toFixed(1)}% | Model v${pred.modelVersion}`);
+      }
       break;
 
     case 'bet':
-      console.log('💰 Placing paper bets...');
-      const betResult = await paperBetting.placeBets();
-      console.log(betResult);
+      console.log('💰 Placing bets...');
+      await bettingService.placeBets();
+      break;
+
+    case 'settle':
+      console.log('🏁 Settling completed bets...');
+      const settled = await bettingService.settleBets();
+      console.log(`   Settled ${settled} bets`);
       break;
 
     case 'stats':
       console.log('📈 Betting Statistics:');
-      const stats = paperBetting.getStats();
-      Object.entries(stats).forEach(([key, value]) => {
-        console.log(`  ${key}: ${value}`);
+      const stats = bettingService.getStats();
+      console.log(`   Bankroll: $${stats.bankroll.toFixed(2)}`);
+      console.log(`   Total Bets: ${stats.totalBets}`);
+      console.log(`   Wins: ${stats.wins} | Losses: ${stats.losses} | Pushes: ${stats.pushes}`);
+      console.log(`   Win Rate: ${stats.winRate}%`);
+      console.log(`   ROI: ${stats.roi}%`);
+      console.log(`   Total Profit: $${stats.totalProfit.toFixed(2)}`);
+      break;
+
+    case 'backtest':
+      const sport = process.argv[3] || 'basketball_nba';
+      console.log(`🔄 Running backtest for ${sport}...`);
+      await backtestService.runBacktest(sport, {
+        sampleSize: 500,
+        minConfidence: 0.55,
+        minExpectedValue: 0.02
       });
       break;
 
     case 'run':
       console.log('🚀 Running full daily cycle...');
-      await predictionEngine.fetchAndStoreGames();
-      await predictionEngine.generatePredictionsForToday();
-      const result = await paperBetting.placeBets();
-      console.log('✅ Cycle complete:', result);
+      await sportsApi.getGamesWithOdds('basketball_nba');
+      await sportsApi.getGamesWithOdds('soccer_epl');
+      await sportsApi.getGamesWithOdds('soccer_esp_la_liga');
+      await bettingService.placeBets();
+      await bettingService.settleBets();
+      console.log('\n✅ Daily cycle complete');
       break;
 
     case 'dashboard':
@@ -68,32 +91,27 @@ async function runCommand() {
       startDashboard();
       break;
 
-    case 'cron':
-      // Scheduled job - runs prediction + betting cycle
-      console.log('⏰ Scheduled job running...');
-      await predictionEngine.fetchAndStoreGames();
-      await predictionEngine.generatePredictionsForToday();
-      await paperBetting.placeBets();
-      console.log('✅ Scheduled job complete');
-      break;
-
     case 'help':
     default:
       console.log(`
-Sports Predictor CLI
+Sports Predictor CLI v1.0
 
 Commands:
-  fetch      - Fetch today's games from API
+  fetch      - Fetch latest games from API
   predict    - Generate predictions for upcoming games
   bet        - Place paper bets based on predictions
+  settle     - Settle completed bets
   stats      - Show betting statistics
-  run        - Run full daily cycle (fetch + predict + bet)
+  backtest   - Run backtest on historical data
+  run        - Full daily cycle (fetch + bet + settle)
   dashboard  - Start web dashboard
-  cron       - Run scheduled job (for cron integration)
+  help       - Show this help
 
 Examples:
-  node cli.js run          # Full daily cycle
-  node cli.js stats        # View performance
+  node cli.js predict       # See upcoming predictions
+  node cli.js bet           # Place paper bets
+  node cli.js stats         # View performance
+  node cli.js backtest basketball_nba  # Test model on history
       `);
   }
 }
@@ -106,19 +124,26 @@ function startDashboard() {
   app.use(express.static('public'));
 
   app.get('/api/stats', (req, res) => {
-    res.json(paperBetting.getStats());
+    res.json(bettingService.getStats());
   });
 
-  app.get('/api/predictions', (req, res) => {
-    const { getDb } = require('./src/services/database');
-    const db = getDb();
-    const predictions = db.prepare(`
-      SELECT p.*, g.home_team, g.away_team, g.start_time, g.status
-      FROM predictions p
-      JOIN games g ON p.game_id = g.id
-      ORDER BY g.start_time DESC
-      LIMIT 20
-    `).all();
+  app.get('/api/predictions', async (req, res) => {
+    const predictions = [];
+    for (const sport of ['basketball_nba', 'soccer_epl', 'soccer_esp_la_liga']) {
+      const games = await sportsApi.getGamesWithOdds(sport);
+      for (const game of games.slice(0, 2)) {
+        const pred = await predictionModel.predict(game, sport);
+        predictions.push({
+          sport,
+          home: game.home_team,
+          away: game.away_team,
+          time: game.commence_time,
+          prediction: pred.predictedWinner,
+          confidence: pred.confidence,
+          ev: pred.expectedValue
+        });
+      }
+    }
     res.json(predictions);
   });
 
@@ -127,19 +152,5 @@ function startDashboard() {
   });
 }
 
-// Run command
+// Run
 runCommand().catch(console.error);
-
-// Schedule daily job at 9 AM
-cron.schedule('0 9 * * *', () => {
-  console.log('⏰ Daily prediction job triggered');
-  predictionEngine.fetchAndStoreGames().then(() => {
-    predictionEngine.generatePredictionsForToday();
-    paperBetting.placeBets();
-  });
-}, {
-  scheduled: true,
-  timezone: 'Europe/Warsaw'
-});
-
-console.log('📅 Daily cron scheduled for 9:00 AM (Warsaw time)');
