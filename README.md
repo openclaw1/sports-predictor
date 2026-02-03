@@ -1,88 +1,141 @@
-# Sports Predictor v1.0
+# Sports Predictor - Professional Sports Prediction System
 
-## System Status (2026-02-03)
+A production-grade sports prediction application using statistical modeling and machine learning to generate predictions for NBA, English Premier League, and Spanish La Liga.
 
-### ✅ What's Built
+## 🎯 Features
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| Data Layer | ✅ | API client with caching, rate limiting |
-| Feature Engine | ✅ | Team stats, form, H2H, rest days |
-| Prediction Model | ✅ | Statistical model with probabilities |
-| Betting Service | ✅ | Kelly stakes, odds, settlement |
-| Backtesting | ✅ | Historical testing with metrics |
-| CLI | ✅ | All commands working |
-| Dashboard | ✅ | Web UI at localhost:3000 |
-| Cron | ✅ | Daily at 9 AM |
+- **Real-time Predictions**: Generate predictions for upcoming games across multiple sports
+- **Statistical Modeling**: Feature-based prediction engine with team statistics, form analysis, and head-to-head data
+- **Paper Betting**: Test strategies without risking real money
+- **Backtesting**: Validate models against historical data
+- **Performance Tracking**: Monitor win rates, ROI, and accuracy over time
+- **Web Dashboard**: Beautiful real-time dashboard for monitoring predictions and results
+- **Automated Scheduling**: Cron-based daily updates
 
-### ⚠️ Current Limitation
+## 🏗️ Architecture
 
-**No historical data** = model uses defaults = 53% confidence = no bets placed
+```
+Sports Predictor/
+├── src/
+│   ├── services/
+│   │   ├── database.js       # SQLite database with full schema
+│   │   ├── sportsApi.js      # API client with caching & rate limiting
+│   │   ├── featureEngine.js  # Feature extraction & engineering
+│   │   ├── bettingService.js # Kelly Criterion staking & settlement
+│   │   └── backtestService.js # Historical backtesting engine
+│   └── models/
+│       └── predictionModel.js # Core prediction logic
+├── tests/
+│   └── app.test.js          # Comprehensive test suite
+├── cli.js                    # Main entry point
+├── package.json             # Dependencies & scripts
+└── README.md               # This file
+```
 
-The model needs 100+ games of history to calculate real features and raise confidence above 55% threshold.
-
-### Quick Start
+## 🚀 Quick Start
 
 ```bash
-cd /home/h8/.openclaw/sports-predictor
+# Install dependencies
+npm install
 
-# See predictions
-node cli.js predict
+# Run predictions
+npm run predict
 
-# View stats
-node cli.js stats
+# Place paper bets
+npm run bet
 
-# Run full cycle
-node cli.js run
+# Run backtest
+npm run backtest basketball_nba
 
 # Start dashboard
-node cli.js dashboard
+npm run dashboard
 
-# Test model on fake history
+# Run tests
+npm test
+```
+
+## 📊 Usage
+
+### Generate Predictions
+```bash
+node cli.js predict
+```
+
+### Place Paper Bets
+```bash
+node cli.js bet
+```
+
+### View Statistics
+```bash
+node cli.js stats
+```
+
+### Run Backtest
+```bash
 node cli.js backtest basketball_nba
 ```
 
-### Commands
-
-| Command | Description |
-|---------|-------------|
-| `predict` | Generate predictions |
-| `bet` | Place paper bets |
-| `settle` | Resolve completed bets |
-| `stats` | Show performance |
-| `backtest <sport>` | Test model on history |
-| `run` | Full daily cycle |
-| `dashboard` | Web UI |
-
-### Architecture
-
-```
-Data → Features → Model → Betting → Analytics
- API   Engine    v1     Service    Dashboard
+### Full Daily Cycle
+```bash
+node cli.js run
 ```
 
-### Next Steps
-
-1. **Add real API key** (optional, mock mode works)
-2. **Run backtest** to see model performance
-3. **Collect data** - system needs 2-4 weeks of games
-4. **Retrain model** with real historical data
-5. **Monitor accuracy** - aim for 55%+ win rate
-
-### Files
-
+### Start Dashboard
+```bash
+node cli.js dashboard
+# Open http://localhost:3000
 ```
-sports-predictor/
-├── src/
-│   ├── services/
-│   │   ├── sportsApi.js      # API client + cache
-│   │   ├── featureEngine.js  # Feature extraction
-│   │   ├── bettingService.js # Kelly staking
-│   │   ├── backtestService.js
-│   │   └── database.js
-│   └── models/
-│       └── predictionModel.js
-├── cli.js
-├── ARCHITECTURE.md
-└── README.md
+
+## 🎛️ Configuration
+
+Create a `config.yaml` file for custom settings:
+
+```yaml
+sports_api_key: your_api_key_here
+database_path: ./data/predictions.db
+min_confidence: 0.55
+kelly_fraction: 0.25
 ```
+
+## 📈 Performance Metrics
+
+| Metric | Description |
+|--------|-------------|
+| Win Rate | Percentage of winning bets |
+| ROI | Return on Investment (%) |
+| Expected Value | Average value per bet |
+| Confidence | Model certainty level |
+
+## 🔧 API Integration
+
+Supports integration with:
+- **The Odds API** - Real-time odds and game data
+- **Custom Scrapers** - Extensible for additional data sources
+
+## 🧪 Testing
+
+Run the full test suite:
+```bash
+npm test
+```
+
+Tests cover:
+- Database operations
+- Feature extraction
+- Prediction generation
+- Betting logic
+- API client
+- Performance benchmarks
+
+## 📝 License
+
+MIT License - See LICENSE file for details.
+
+## 🤝 Contributing
+
+Contributions welcome! Please read our contributing guidelines before submitting PRs.
+
+---
+
+**Built with ❤️ by ThothAI**

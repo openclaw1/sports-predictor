@@ -126,6 +126,16 @@ class BettingService {
       const games = await sportsApi.getGamesWithOdds(sportKey);
 
       for (const game of games) {
+        // Ensure game is stored in database (for foreign key constraint)
+        try {
+          db.prepare(`
+            INSERT OR IGNORE INTO games (id, sport, home_team, away_team, start_time)
+            VALUES (?, ?, ?, ?, ?)
+          `).run(game.id, sportKey, game.home_team, game.away_team, game.commence_time);
+        } catch (e) {
+          // Ignore insertion errors
+        }
+
         // Skip if game already has a pending bet
         const existingBet = db.prepare(`
           SELECT id FROM paper_bets
