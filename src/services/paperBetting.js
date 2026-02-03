@@ -1,4 +1,4 @@
-const { getDb } = require('../services/database');
+const { getDb } = require('./database');
 const predictionEngine = require('../models/predictionEngine');
 
 class PaperBetting {

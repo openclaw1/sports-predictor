@@ -1,5 +1,5 @@
-const { getDb } = require('./database');
-const sportsApi = require('./sportsApi');
+const { getDb } = require('../services/database');
+const sportsApi = require('../services/sportsApi');
 
 class PredictionEngine {
   constructor() {

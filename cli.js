@@ -12,10 +12,11 @@
  *   node cli.js dashboard    - Start web dashboard
  */
 
-const { initDatabase } = require('./services/database');
-const predictionEngine = require('./models/predictionEngine');
-const paperBetting = require('./services/paperBetting');
+const { initDatabase } = require('./src/services/database');
+const predictionEngine = require('./src/models/predictionEngine');
+const paperBetting = require('./src/services/paperBetting');
 const cron = require('node-cron');
+const path = require('path');
 
 // Initialize
 initDatabase();
@@ -109,7 +110,8 @@ function startDashboard() {
   });
 
   app.get('/api/predictions', (req, res) => {
-    const db = require('./services/database').getDb();
+    const { getDb } = require('./src/services/database');
+    const db = getDb();
     const predictions = db.prepare(`
       SELECT p.*, g.home_team, g.away_team, g.start_time, g.status
       FROM predictions p
