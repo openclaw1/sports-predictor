@@ -93,8 +93,28 @@ class BettingService {
     };
   }
 
-  // Calculate Kelly stake
+  /**
+   * Calculate optimal stake using Kelly Criterion with input validation
+   * @param {number} probability - Estimated win probability (0-1)
+   * @param {number} odds - Decimal odds (e.g., 2.0 for even money)
+   * @param {number} bankroll - Current bankroll amount
+   * @returns {number} Recommended stake amount
+   */
   calculateKellyStake(probability, odds, bankroll) {
+    // Input validation for edge cases
+    if (typeof probability !== 'number' || isNaN(probability) || probability < 0 || probability > 1) {
+      console.warn('⚠️ Invalid probability in Kelly calculation, using 0.5');
+      probability = 0.5;
+    }
+    if (typeof odds !== 'number' || isNaN(odds) || odds < 1) {
+      console.warn('⚠️ Invalid odds in Kelly calculation, using 1.90');
+      odds = 1.90;
+    }
+    if (typeof bankroll !== 'number' || isNaN(bankroll) || bankroll <= 0) {
+      console.warn('⚠️ Invalid bankroll in Kelly calculation, using 1000');
+      bankroll = 1000;
+    }
+
     // Kelly formula: f* = (bp - q) / b
     // where b = odds - 1, p = probability, q = 1 - p
     const b = odds - 1;

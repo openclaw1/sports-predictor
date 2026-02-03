@@ -8,7 +8,11 @@ class PredictionModel {
     this.isTrained = false;
   }
 
-  // Train model on historical data (simple logistic regression)
+  /**
+   * Train model on historical data (simple logistic regression)
+   * @param {string} sportKey - Sport identifier (e.g., 'basketball_nba')
+   * @returns {boolean} True if trained successfully
+   */
   async train(sportKey) {
     console.log(`📊 Training model for ${sportKey}...`);
 
@@ -42,7 +46,12 @@ class PredictionModel {
     return true;
   }
 
-  // Make prediction for a single game
+  /**
+   * Make prediction for a single game
+   * @param {object} game - Game object with teams and odds
+   * @param {string} sport - Sport identifier
+   * @returns {object} Prediction with probabilities, winner, and confidence
+   */
   async predict(game, sport) {
     // Extract features
     const features = await featureEngine.extractFeatures(game, sport);
@@ -164,7 +173,12 @@ class PredictionModel {
     };
   }
 
-  // Batch predict for multiple games
+  /**
+   * Batch predict for multiple games
+   * @param {Array} games - Array of game objects
+   * @param {string} sport - Sport identifier
+   * @returns {Array} Array of {game, prediction} objects
+   */
   async predictAll(games, sport) {
     const predictions = [];
 
