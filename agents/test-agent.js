@@ -62,7 +62,7 @@ function runTestAgent() {
     // 3. Database health check
     log('💾 Checking database...');
     try {
-      const dbCheck = execSync('node -e "require(\"./src/services/database\").getDb().prepare(\"SELECT COUNT(*) FROM games\").get()"', {
+      const dbCheck = execSync('node -e "const db = require(\\\"./src/services/database\\\").getDb(); console.log(db.prepare(\\\"SELECT COUNT(*) as cnt FROM games\\\").get().cnt);"', {
         cwd: path.join(__dirname, '..'),
         encoding: 'utf8'
       });
@@ -70,15 +70,18 @@ function runTestAgent() {
       log(`   Database OK: ${dbCheck.trim()} games stored`);
     } catch (e) {
       results.health = 'error';
-      results.errors.push('Database check failed');
+      results.errors.push('Database check failed: ' + e.message);
       log('   ❌ Database error');
     }
     
     // 4. API health check
     log('🌐 Checking API...');
     try {
-      // Quick syntax check
-      require('./api.js');
+      // Check if api.js syntax is valid
+      execSync('node --check api.js', {
+        cwd: path.join(__dirname, '..'),
+        stdio: 'pipe'
+      });
       log('   API server OK (syntax check)');
     } catch (e) {
       results.errors.push('API syntax error: ' + e.message);
